@@ -63,19 +63,29 @@ export class MockHcmServer {
     }
   }
 
+  private log(message: string): void {
+    const timestamp = new Date().toISOString();
+    console.log(`[HCM ${timestamp}] ${message}`);
+  }
+
   private async handleRequest(req: http.IncomingMessage, res: http.ServerResponse) {
+    const start = Date.now();
+    const url = new URL(req.url!, `http://localhost`);
+    const method = req.method?.toUpperCase();
+
+    this.log(`--> ${method} ${url.pathname}`);
+
     if (this.config.latencyMs) {
+      this.log(`    simulating ${this.config.latencyMs}ms latency...`);
       await new Promise((r) => setTimeout(r, this.config.latencyMs));
     }
 
     if (this.config.forceError) {
+      this.log(`<-- ${method} ${url.pathname} ${this.config.forceError} FORCED ERROR (${Date.now() - start}ms)`);
       res.writeHead(this.config.forceError, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Forced error", status: this.config.forceError }));
       return;
     }
-
-    const url = new URL(req.url!, `http://localhost`);
-    const method = req.method?.toUpperCase();
 
     // GET /hcm/balances/:employeeId/:locationId
     const balanceMatch = url.pathname.match(/^\/hcm\/balances\/([^/]+)\/([^/]+)$/);
@@ -84,11 +94,13 @@ export class MockHcmServer {
       const balance = this.balances.get(`${employeeId}:${locationId}`);
 
       if (!balance) {
+        this.log(`<-- ${method} ${url.pathname} 404 balance not found (${Date.now() - start}ms)`);
         res.writeHead(404, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Balance not found" }));
         return;
       }
 
+      this.log(`<-- ${method} ${url.pathname} 200 | available=${balance.available} used=${balance.used} (${Date.now() - start}ms)`);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(balance));
       return;
@@ -100,7 +112,10 @@ export class MockHcmServer {
       const dto = JSON.parse(body);
       const submissionId = `hcm-sub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+      this.log(`    employee=${dto.employeeId} location=${dto.locationId} days=${dto.days} (${dto.startDate} to ${dto.endDate})`);
+
       if (this.config.rejectSubmissions?.includes(dto.employeeId)) {
+        this.log(`<-- POST /hcm/time-off 422 REJECTED (forced) | submission=${submissionId} (${Date.now() - start}ms)`);
         res.writeHead(422, { "Content-Type": "application/json" });
         res.end(JSON.stringify({
           submissionId,
@@ -115,6 +130,7 @@ export class MockHcmServer {
       const key = `${dto.employeeId}:${dto.locationId}`;
       const balance = this.balances.get(key);
       if (balance && (balance.available - balance.used) < dto.days) {
+        this.log(`<-- POST /hcm/time-off 422 REJECTED (insufficient) | available=${balance.available - balance.used} < requested=${dto.days} (${Date.now() - start}ms)`);
         res.writeHead(422, { "Content-Type": "application/json" });
         res.end(JSON.stringify({
           submissionId,
@@ -128,10 +144,12 @@ export class MockHcmServer {
       // Apply the deduction on mock side
       if (balance) {
         balance.used += dto.days;
+        this.log(`    balance updated: used ${balance.used - dto.days} -> ${balance.used}`);
       }
 
       this.submissions.push({ employeeId: dto.employeeId, days: dto.days, submissionId });
 
+      this.log(`<-- POST /hcm/time-off 200 ACCEPTED | submission=${submissionId} (${Date.now() - start}ms)`);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
         submissionId,
@@ -140,6 +158,7 @@ export class MockHcmServer {
       return;
     }
 
+    this.log(`<-- ${method} ${url.pathname} 404 unknown route (${Date.now() - start}ms)`);
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Not found" }));
   }
