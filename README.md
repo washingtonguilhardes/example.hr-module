@@ -65,50 +65,67 @@ Open **http://localhost:3000/api/docs** for the Swagger UI where you can test al
 
 ## Quick Start Guide
 
-Once both servers are running, test the full flow:
+Once both servers are running, test the full flow using the Swagger UI at **http://localhost:3000/api/docs**, or use the `.http` scenario files in the `examples/` folder.
 
-**Step 1 — Seed balances via batch sync (simulates HCM pushing data):**
+### Using httpyac (recommended)
+
+The `examples/` folder contains 15 `.http` scenario files that cover every API behavior. They use [httpyac](https://httpyac.github.io/) with automatic variable capture — request IDs flow between steps automatically.
+
 ```bash
+# Seed all test balances
+npx httpyac examples/01-seed-balances.http --all
+
+# Run the happy path lifecycle (create -> approve -> verify)
+npx httpyac examples/03-happy-path-lifecycle.http --all
+
+# Run all scenarios
+npx httpyac examples/*.http --all
+```
+
+You can also use the [httpyac VS Code extension](https://marketplace.visualstudio.com/items?itemName=anweber.vscode-httpyac) to click through each step interactively.
+
+### Available scenarios
+
+| File | Scenario |
+|------|----------|
+| `01-seed-balances` | Seed all test employees (including HCM drift employee) |
+| `02-query-balances` | Query balances and 404 cases |
+| `03-happy-path-lifecycle` | Create -> approve -> verify balance deduction |
+| `04-reject-request` | Create -> reject -> verify hold released |
+| `05-cancel-pending` | Employee cancels before approval |
+| `06-cancel-approved` | Employee cancels after approval (used days restored) |
+| `07-hcm-drift-rejection` | Local passes but HCM rejects on approval |
+| `08-hcm-unavailable` | HCM down -> 502 -> request stays PENDING for retry |
+| `09-insufficient-balance` | Request rejected locally (not enough days) |
+| `10-duplicate-idempotency` | Same idempotency key returns same request |
+| `11-date-overlap` | Overlapping date ranges rejected |
+| `12-invalid-transition` | Invalid FSM transitions (e.g., approve a rejected request) |
+| `13-input-validation` | Bad input: missing fields, wrong types, unknown properties |
+| `14-batch-sync` | Conflict detection, anniversary bonus, bulk employee sync |
+| `15-invalid-dimensions` | Unknown employee/location combination |
+
+### Using curl
+
+```bash
+# Seed a balance
 curl -X POST http://localhost:3000/sync/batch \
   -H "Content-Type: application/json" \
-  -d '{
-    "source": "workday",
-    "timestamp": "2026-04-10T00:00:00Z",
-    "balances": [
-      {"employeeId": "emp-1", "locationId": "loc-nyc", "policyType": "VACATION", "available": 15, "used": 3}
-    ]
-  }'
-```
+  -d '{"source":"workday","timestamp":"2026-04-10T00:00:00Z","balances":[{"employeeId":"emp-1","locationId":"loc-nyc","policyType":"VACATION","available":15,"used":3}]}'
 
-**Step 2 — Check the balance:**
-```bash
+# Check balance
 curl http://localhost:3000/balances/emp-1
-```
 
-**Step 3 — Create a time-off request:**
-```bash
+# Create a request
 curl -X POST http://localhost:3000/requests \
   -H "Content-Type: application/json" \
-  -d '{
-    "employeeId": "emp-1",
-    "locationId": "loc-nyc",
-    "policyType": "VACATION",
-    "startDate": "2026-05-01",
-    "endDate": "2026-05-05",
-    "days": 3,
-    "idempotencyKey": "req-001"
-  }'
-```
+  -d '{"employeeId":"emp-1","locationId":"loc-nyc","policyType":"VACATION","startDate":"2026-05-01","endDate":"2026-05-05","days":3,"idempotencyKey":"req-001"}'
 
-**Step 4 — Approve the request (uses the `id` from step 3):**
-```bash
+# Approve (replace <REQUEST_ID> with id from previous response)
 curl -X PATCH http://localhost:3000/requests/<REQUEST_ID>/approve \
   -H "Content-Type: application/json" \
-  -d '{"reviewerNote": "Enjoy your time off!"}'
-```
+  -d '{"reviewerNote":"Enjoy your time off!"}'
 
-**Step 5 — Verify the balance was updated:**
-```bash
+# Verify balance updated
 curl http://localhost:3000/balances/emp-1
 ```
 
@@ -118,7 +135,7 @@ curl http://localhost:3000/balances/emp-1
 # Unit tests (50 tests)
 npm test
 
-# E2E tests (26 tests)
+# E2E tests (34 tests)
 npm run test:e2e
 
 # All tests with coverage report
@@ -151,6 +168,7 @@ The test suite covers:
 - **Idempotency** — duplicate requests return existing, no double balance hold
 - **Defensive validation** — insufficient balance, invalid dates, date overlaps, invalid dimensions
 - **State machine** — all valid and invalid transitions tested
+- **Input validation** — malformed payloads, invalid types, unknown fields rejected
 
 ## Project Structure
 
@@ -160,12 +178,16 @@ src/
   request/          Request module (entity, service, controller, DTOs)
   hcm/              HCM client module (real-time API communication)
   sync/             Batch sync module (inbound HCM data, SyncLog)
+  common/           Global exception filter, request logger middleware
   database/         TypeORM + SQLite configuration
   main.ts           App bootstrap with Swagger setup
 
 test/
-  mock-hcm/         Standalone mock HCM server
-  *.e2e-spec.ts     E2E tests (balance, request, sync, integration)
+  mock-hcm/         Standalone mock HCM server (start.ts + configurable server)
+  *.e2e-spec.ts     E2E tests (balance, request, sync, integration, validation)
+
+examples/
+  *.http            15 httpyac scenario files for manual API testing
 
 docs/
   TRD.md            Technical Requirement Document
