@@ -77,7 +77,7 @@
     {
       "id": "DISC-005",
       "name": "HCM integration — real-time API client",
-      "list": "IN PROGRESS",
+      "list": "LIVE",
       "labels": ["PRODUCT", "MVP", "P1"],
       "desc": "Client module to communicate with the HCM real-time API for getting and sending time-off values. Used during request approval to validate with HCM and submit approved requests.",
       "checklist": [
@@ -92,7 +92,7 @@
     {
       "id": "DISC-006",
       "name": "HCM integration — batch sync endpoint",
-      "list": "TODO",
+      "list": "LIVE",
       "labels": ["PRODUCT", "MVP", "P1"],
       "desc": "Endpoint to receive bulk balance data from HCM. HCM can push the entire corpus of balances to ExampleHR. Must reconcile incoming data with local state and flag conflicts.",
       "checklist": [
@@ -107,7 +107,7 @@
     {
       "id": "DISC-007",
       "name": "Defensive validation layer",
-      "list": "TODO",
+      "list": "LIVE",
       "labels": ["PRODUCT", "MVP", "P1"],
       "desc": "HCM validation is not always guaranteed. Implement a local defensive validation layer that checks balance sufficiency, dimension validity, and request consistency before and independently of HCM.",
       "checklist": [
@@ -121,7 +121,7 @@
     {
       "id": "DISC-008",
       "name": "Mock HCM server for testing",
-      "list": "IN PROGRESS",
+      "list": "LIVE",
       "labels": ["TECH DEBT", "MVP", "P0"],
       "desc": "Build a mock HCM server that simulates real-time and batch endpoints with configurable behavior — success, errors, balance changes, latency. Essential for integration tests and proving system robustness.",
       "checklist": [
@@ -137,7 +137,7 @@
     {
       "id": "DISC-009",
       "name": "Integration test suite",
-      "list": "TODO",
+      "list": "IN PROGRESS",
       "labels": ["TECH DEBT", "MVP", "P1"],
       "desc": "End-to-end integration tests that exercise the full request lifecycle with the mock HCM server. Must cover happy paths, conflict scenarios, and error resilience.",
       "checklist": [
