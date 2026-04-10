@@ -3,6 +3,7 @@
 
 ### Step 1: Create a 3-day vacation request for emp-1
 # Expected: 201 PENDING, balance pending increases by 3
+# @name createRequest
 POST http://localhost:3000/requests
 Content-Type: application/json
 
@@ -20,9 +21,9 @@ Content-Type: application/json
 ### Step 2: Check balance — pending should be 3, effectiveAvailable should be 9
 GET http://localhost:3000/balances/emp-1/loc-nyc
 
-### Step 3: Approve the request (replace REQUEST_ID with id from step 1)
+### Step 3: Approve the request
 # Expected: 200 APPROVED, HCM submission accepted, hcmSubmissionId populated
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/approve
+PATCH http://localhost:3000/requests/{{createRequest.id}}/approve
 Content-Type: application/json
 
 {

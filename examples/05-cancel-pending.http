@@ -2,6 +2,7 @@
 ### Prerequisites: run 01-seed-balances.http first
 
 ### Step 1: Create a request
+# @name createRequest
 POST http://localhost:3000/requests
 Content-Type: application/json
 
@@ -16,9 +17,9 @@ Content-Type: application/json
   "idempotencyKey": "cancel-pending-001"
 }
 
-### Step 2: Employee cancels before approval (replace REQUEST_ID)
+### Step 2: Employee cancels before approval
 # Expected: 200 CANCELLED, pending hold released
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/cancel
+PATCH http://localhost:3000/requests/{{createRequest.id}}/cancel
 
 ### Step 3: Verify balance — pending released
 GET http://localhost:3000/balances/emp-2/loc-nyc

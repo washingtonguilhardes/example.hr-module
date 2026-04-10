@@ -13,6 +13,7 @@ Content-Type: application/json
 }
 
 ### Step 2: Create a pending request for 8 days
+# @name pendingRequest
 POST http://localhost:3000/requests
 Content-Type: application/json
 

@@ -2,6 +2,7 @@
 ### Prerequisites: run 01-seed-balances.http first, mock HCM running on :3001
 
 ### Step 1: Create a request
+# @name createRequest
 POST http://localhost:3000/requests
 Content-Type: application/json
 
@@ -15,8 +16,9 @@ Content-Type: application/json
   "idempotencyKey": "cancel-approved-001"
 }
 
-### Step 2: Approve it (replace REQUEST_ID)
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/approve
+### Step 2: Approve it
+# @name approveRequest
+PATCH http://localhost:3000/requests/{{createRequest.id}}/approve
 Content-Type: application/json
 
 {
@@ -26,9 +28,9 @@ Content-Type: application/json
 ### Step 3: Check balance — used should have increased
 GET http://localhost:3000/balances/emp-2/loc-nyc
 
-### Step 4: Cancel the approved request (replace REQUEST_ID)
+### Step 4: Cancel the approved request
 # Expected: 200 CANCELLED, used days restored
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/cancel
+PATCH http://localhost:3000/requests/{{createRequest.id}}/cancel
 
 ### Step 5: Verify balance — used should be back to original
 GET http://localhost:3000/balances/emp-2/loc-nyc

@@ -7,6 +7,7 @@
 GET http://localhost:3000/balances/emp-3/loc-nyc
 
 ### Step 2: Create a 5-day request — passes local validation (7 >= 5)
+# @name createRequest
 POST http://localhost:3000/requests
 Content-Type: application/json
 
@@ -21,10 +22,10 @@ Content-Type: application/json
   "idempotencyKey": "drift-001"
 }
 
-### Step 3: Try to approve — HCM rejects! (replace REQUEST_ID)
+### Step 3: Try to approve — HCM rejects!
 # Expected: 422 HCM_VALIDATION_ERROR
 # HCM only has 2 effective days (10 available - 8 used)
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/approve
+PATCH http://localhost:3000/requests/{{createRequest.id}}/approve
 Content-Type: application/json
 
 {

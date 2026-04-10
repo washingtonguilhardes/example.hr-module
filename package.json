@@ -50,6 +50,7 @@
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
+    "httpyac": "^6.16.7",
     "husky": "^9.1.7",
     "jest": "^30.0.0",
     "prettier": "^3.4.2",

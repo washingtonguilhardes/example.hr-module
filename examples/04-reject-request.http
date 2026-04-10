@@ -2,6 +2,7 @@
 ### Prerequisites: run 01-seed-balances.http first
 
 ### Step 1: Create a request
+# @name createRequest
 POST http://localhost:3000/requests
 Content-Type: application/json
 
@@ -16,9 +17,9 @@ Content-Type: application/json
   "idempotencyKey": "reject-001"
 }
 
-### Step 2: Reject it (replace REQUEST_ID)
+### Step 2: Reject it
 # Expected: 200 REJECTED, pending hold released
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/reject
+PATCH http://localhost:3000/requests/{{createRequest.id}}/reject
 Content-Type: application/json
 
 {

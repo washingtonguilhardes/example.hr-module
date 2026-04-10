@@ -2,6 +2,7 @@
 ### Prerequisites: run 01-seed-balances.http first
 
 ### Step 1: Create a request
+# @name createRequest
 POST http://localhost:3000/requests
 Content-Type: application/json
 
@@ -15,23 +16,23 @@ Content-Type: application/json
   "idempotencyKey": "transition-001"
 }
 
-### Step 2: Reject it (replace REQUEST_ID)
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/reject
+### Step 2: Reject it
+PATCH http://localhost:3000/requests/{{createRequest.id}}/reject
 Content-Type: application/json
 
 {
   "reviewerNote": "Not now"
 }
 
-### Step 3: Try to approve the rejected request (replace REQUEST_ID)
+### Step 3: Try to approve the rejected request
 # Expected: 422 INVALID_TRANSITION — cannot approve a REJECTED request
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/approve
+PATCH http://localhost:3000/requests/{{createRequest.id}}/approve
 Content-Type: application/json
 
 {
   "reviewerNote": "Changed my mind"
 }
 
-### Step 4: Try to cancel the rejected request (replace REQUEST_ID)
+### Step 4: Try to cancel the rejected request
 # Expected: 422 INVALID_TRANSITION — cannot cancel a REJECTED request
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/cancel
+PATCH http://localhost:3000/requests/{{createRequest.id}}/cancel

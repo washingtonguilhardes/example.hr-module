@@ -3,6 +3,7 @@
 ### Prerequisites: run 01-seed-balances.http first, mock HCM running on :3001
 
 ### Step 1: Create a request (HCM can be running or not for this step)
+# @name createRequest
 POST http://localhost:3000/requests
 Content-Type: application/json
 
@@ -18,9 +19,9 @@ Content-Type: application/json
 
 ### Step 2: STOP the mock HCM server (Ctrl+C on the terminal running npm run mock:hcm)
 
-### Step 3: Try to approve — fails with 502 (replace REQUEST_ID)
+### Step 3: Try to approve — fails with 502
 # Expected: 502 HCM_UNAVAILABLE — request stays PENDING, manager can retry
-PATCH http://localhost:3000/requests/{{REQUEST_ID}}/approve
+PATCH http://localhost:3000/requests/{{createRequest.id}}/approve
 Content-Type: application/json
 
 {
@@ -32,3 +33,9 @@ GET http://localhost:3000/requests?employeeId=emp-1&status=PENDING
 
 ### Step 5: Restart mock HCM (npm run mock:hcm), then retry approval
 ### The same PATCH request should now succeed
+PATCH http://localhost:3000/requests/{{createRequest.id}}/approve
+Content-Type: application/json
+
+{
+  "reviewerNote": "Approved (retry)"
+}
