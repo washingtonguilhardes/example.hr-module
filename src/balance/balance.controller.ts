@@ -1,22 +1,30 @@
 import { Controller, Get, Post, Param, Body } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiProperty } from "@nestjs/swagger";
+import { IsString, IsNotEmpty, IsNumber, IsIn } from "class-validator";
 import { BalanceService } from "./balance.service";
 import { EmployeeBalancesResponseDto } from "./dto/balance-response.dto";
 
 class SeedBalanceDto {
   @ApiProperty({ example: "emp-1" })
+  @IsString()
+  @IsNotEmpty()
   employeeId: string;
 
   @ApiProperty({ example: "loc-nyc" })
+  @IsString()
+  @IsNotEmpty()
   locationId: string;
 
   @ApiProperty({ example: "VACATION", enum: ["VACATION", "SICK", "PERSONAL"] })
+  @IsIn(["VACATION", "SICK", "PERSONAL"])
   policyType: string;
 
   @ApiProperty({ example: 15 })
+  @IsNumber()
   available: number;
 
   @ApiProperty({ example: 3 })
+  @IsNumber()
   used: number;
 }
 
