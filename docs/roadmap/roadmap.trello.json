@@ -14,7 +14,7 @@
     {
       "id": "DISC-001",
       "name": "Write Technical Requirement Document (TRD)",
-      "list": "IN PROGRESS",
+      "list": "LIVE",
       "labels": ["PRODUCT", "MVP", "P0"],
       "desc": "Create a comprehensive TRD covering the Time-Off Microservice architecture, API design, data model, HCM integration strategy, sync mechanisms, and error handling. Must include challenges, proposed solutions, and alternatives considered.",
       "checklist": [
@@ -30,7 +30,7 @@
     {
       "id": "DISC-002",
       "name": "Setup SQLite + TypeORM infrastructure",
-      "list": "TODO",
+      "list": "IN PROGRESS",
       "labels": ["TECH DEBT", "MVP", "P0"],
       "desc": "Add TypeORM with SQLite driver to the NestJS project. Configure database module, migrations setup, and base entity patterns. This unblocks all feature modules.",
       "checklist": [
