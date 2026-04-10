@@ -14,7 +14,7 @@
     {
       "id": "DISC-001",
       "name": "Write Technical Requirement Document (TRD)",
-      "list": "TODO",
+      "list": "IN PROGRESS",
       "labels": ["PRODUCT", "MVP", "P0"],
       "desc": "Create a comprehensive TRD covering the Time-Off Microservice architecture, API design, data model, HCM integration strategy, sync mechanisms, and error handling. Must include challenges, proposed solutions, and alternatives considered.",
       "checklist": [

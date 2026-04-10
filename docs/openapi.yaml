@@ -1,0 +1,652 @@
+openapi: 3.0.3
+info:
+  title: ExampleHR Time-Off Microservice API
+  description: |
+    REST API for managing employee time-off requests and balance synchronization
+    with external HCM systems (e.g., Workday, SAP).
+  version: 1.0.0
+  contact:
+    name: Washington Guilhardes
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://ehr.herokuapp.com
+    description: Production
+
+tags:
+  - name: Balances
+    description: Employee time-off balance queries
+  - name: Requests
+    description: Time-off request lifecycle management
+  - name: Sync
+    description: HCM balance synchronization
+
+paths:
+  /balances/{employeeId}:
+    get:
+      tags: [Balances]
+      summary: Get all balances for an employee
+      description: Returns all time-off balances across locations and policy types for the given employee.
+      operationId: getEmployeeBalances
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+      responses:
+        "200":
+          description: Employee balances retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeBalancesResponse"
+        "404":
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /balances/{employeeId}/{locationId}:
+    get:
+      tags: [Balances]
+      summary: Get balances for an employee at a specific location
+      description: Returns time-off balances filtered to a specific location for the given employee.
+      operationId: getEmployeeLocationBalances
+      parameters:
+        - $ref: "#/components/parameters/EmployeeId"
+        - $ref: "#/components/parameters/LocationId"
+      responses:
+        "200":
+          description: Employee balances at location retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeBalancesResponse"
+        "404":
+          description: Employee or location not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /requests:
+    get:
+      tags: [Requests]
+      summary: List time-off requests
+      description: Returns a paginated list of time-off requests with optional filters.
+      operationId: listRequests
+      parameters:
+        - name: employeeId
+          in: query
+          schema:
+            type: string
+          description: Filter by employee ID
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/RequestStatus"
+          description: Filter by request status
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Items per page
+      responses:
+        "200":
+          description: Paginated list of requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedRequestsResponse"
+
+    post:
+      tags: [Requests]
+      summary: Create a time-off request
+      description: |
+        Creates a new time-off request with status PENDING. Validates balance
+        sufficiency, date range, and dimension validity. Places an optimistic
+        hold on the employee's balance for the requested days.
+      operationId: createRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRequestDto"
+      responses:
+        "201":
+          description: Request created successfully with PENDING status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeOffRequestResponse"
+        "409":
+          description: Duplicate idempotency key — returns existing request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeOffRequestResponse"
+        "422":
+          description: Validation failure (insufficient balance, invalid dates, invalid dimensions)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                insufficientBalance:
+                  $ref: "#/components/examples/InsufficientBalanceError"
+                invalidDateRange:
+                  $ref: "#/components/examples/InvalidDateRangeError"
+
+  /requests/{requestId}/approve:
+    patch:
+      tags: [Requests]
+      summary: Approve a time-off request
+      description: |
+        Manager approves the request. Triggers double validation (local + HCM)
+        and submits to HCM. On success, balance pending is decremented and used
+        is incremented.
+      operationId: approveRequest
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewRequestDto"
+      responses:
+        "200":
+          description: Request approved and submitted to HCM
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeOffRequestResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Validation or HCM rejection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                hcmValidationError:
+                  $ref: "#/components/examples/HcmValidationError"
+                invalidTransition:
+                  $ref: "#/components/examples/InvalidTransitionError"
+        "502":
+          description: HCM unavailable — request stays PENDING, can retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /requests/{requestId}/reject:
+    patch:
+      tags: [Requests]
+      summary: Reject a time-off request
+      description: |
+        Manager rejects the request. Pending hold on balance is released.
+      operationId: rejectRequest
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewRequestDto"
+      responses:
+        "200":
+          description: Request rejected, pending hold released
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeOffRequestResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Invalid state transition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /requests/{requestId}/cancel:
+    patch:
+      tags: [Requests]
+      summary: Cancel a time-off request
+      description: |
+        Employee cancels their request. If PENDING, pending hold is released.
+        If APPROVED, used days are restored and HCM is notified.
+      operationId: cancelRequest
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Request cancelled, balance adjusted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeOffRequestResponse"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Invalid state transition (e.g., cancel a rejected request)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /sync/batch:
+    post:
+      tags: [Sync]
+      summary: Receive bulk balance data from HCM
+      description: |
+        HCM pushes the full corpus of time-off balances. The system upserts
+        balances, detects conflicts with pending requests, and returns a summary.
+      operationId: batchSync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchSyncRequestDto"
+      responses:
+        "200":
+          description: Batch sync completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchSyncResponse"
+        "422":
+          description: Invalid payload format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    EmployeeId:
+      name: employeeId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique employee identifier
+
+    LocationId:
+      name: locationId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique location identifier
+
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique time-off request identifier
+
+  schemas:
+    RequestStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, CANCELLED]
+
+    BalanceItem:
+      type: object
+      required:
+        - locationId
+        - policyType
+        - available
+        - used
+        - pending
+        - effectiveAvailable
+      properties:
+        locationId:
+          type: string
+          example: "loc-us-nyc"
+        policyType:
+          type: string
+          example: "VACATION"
+          enum: [VACATION, SICK, PERSONAL]
+        available:
+          type: number
+          format: decimal
+          example: 15
+          description: Total days available from HCM
+        used:
+          type: number
+          format: decimal
+          example: 3
+          description: Days already consumed
+        pending:
+          type: number
+          format: decimal
+          example: 2
+          description: Days held by pending requests
+        effectiveAvailable:
+          type: number
+          format: decimal
+          example: 10
+          description: "Computed: available - used - pending"
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-04-09T14:00:00Z"
+
+    EmployeeBalancesResponse:
+      type: object
+      required:
+        - employeeId
+        - balances
+      properties:
+        employeeId:
+          type: string
+          example: "emp-123"
+        balances:
+          type: array
+          items:
+            $ref: "#/components/schemas/BalanceItem"
+
+    CreateRequestDto:
+      type: object
+      required:
+        - employeeId
+        - locationId
+        - policyType
+        - startDate
+        - endDate
+        - days
+        - idempotencyKey
+      properties:
+        employeeId:
+          type: string
+          example: "emp-123"
+        locationId:
+          type: string
+          example: "loc-us-nyc"
+        policyType:
+          type: string
+          enum: [VACATION, SICK, PERSONAL]
+          example: "VACATION"
+        startDate:
+          type: string
+          format: date
+          example: "2026-05-01"
+        endDate:
+          type: string
+          format: date
+          example: "2026-05-05"
+        days:
+          type: number
+          format: decimal
+          minimum: 0.5
+          example: 3
+          description: Business days requested
+        reason:
+          type: string
+          nullable: true
+          example: "Family vacation"
+        idempotencyKey:
+          type: string
+          example: "req-abc-123"
+          description: Client-provided key to prevent duplicate submissions
+
+    ReviewRequestDto:
+      type: object
+      properties:
+        reviewerNote:
+          type: string
+          nullable: true
+          example: "Approved, enjoy your time off"
+
+    TimeOffRequestResponse:
+      type: object
+      required:
+        - id
+        - employeeId
+        - locationId
+        - policyType
+        - startDate
+        - endDate
+        - days
+        - status
+        - idempotencyKey
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        employeeId:
+          type: string
+        locationId:
+          type: string
+        policyType:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        days:
+          type: number
+          format: decimal
+        status:
+          $ref: "#/components/schemas/RequestStatus"
+        reason:
+          type: string
+          nullable: true
+        reviewerNote:
+          type: string
+          nullable: true
+        hcmSubmissionId:
+          type: string
+          nullable: true
+        idempotencyKey:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaginatedRequestsResponse:
+      type: object
+      required:
+        - data
+        - total
+        - page
+        - limit
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeOffRequestResponse"
+        total:
+          type: integer
+          example: 42
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+
+    BatchSyncRequestDto:
+      type: object
+      required:
+        - source
+        - timestamp
+        - balances
+      properties:
+        source:
+          type: string
+          example: "workday"
+          description: HCM system identifier
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-04-10T00:00:00Z"
+        balances:
+          type: array
+          items:
+            type: object
+            required:
+              - employeeId
+              - locationId
+              - policyType
+              - available
+              - used
+            properties:
+              employeeId:
+                type: string
+                example: "emp-123"
+              locationId:
+                type: string
+                example: "loc-us-nyc"
+              policyType:
+                type: string
+                example: "VACATION"
+              available:
+                type: number
+                format: decimal
+                example: 15
+              used:
+                type: number
+                format: decimal
+                example: 5
+
+    BatchSyncResponse:
+      type: object
+      required:
+        - received
+        - applied
+        - conflicts
+      properties:
+        received:
+          type: integer
+          example: 150
+        applied:
+          type: integer
+          example: 148
+        conflicts:
+          type: integer
+          example: 2
+        conflictDetails:
+          type: array
+          items:
+            type: object
+            properties:
+              employeeId:
+                type: string
+              locationId:
+                type: string
+              reason:
+                type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - statusCode
+        - error
+        - message
+      properties:
+        statusCode:
+          type: integer
+          example: 422
+        error:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - INSUFFICIENT_BALANCE
+            - INVALID_DATE_RANGE
+            - INVALID_DIMENSIONS
+            - DUPLICATE_REQUEST
+            - INVALID_TRANSITION
+            - HCM_VALIDATION_ERROR
+            - HCM_UNAVAILABLE
+            - NOT_FOUND
+        message:
+          type: string
+          example: "Employee emp-123 has 2 effective days available but requested 5"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional context about the error
+
+  examples:
+    InsufficientBalanceError:
+      summary: Insufficient balance
+      value:
+        statusCode: 422
+        error: INSUFFICIENT_BALANCE
+        message: "Employee emp-123 has 2 effective days available but requested 5"
+        details:
+          employeeId: "emp-123"
+          locationId: "loc-us-nyc"
+          available: 10
+          used: 6
+          pending: 2
+          requested: 5
+
+    InvalidDateRangeError:
+      summary: Invalid date range
+      value:
+        statusCode: 422
+        error: INVALID_DATE_RANGE
+        message: "Start date must be before end date and not in the past"
+        details:
+          startDate: "2026-05-05"
+          endDate: "2026-05-01"
+
+    HcmValidationError:
+      summary: HCM rejected the operation
+      value:
+        statusCode: 422
+        error: HCM_VALIDATION_ERROR
+        message: "HCM rejected time-off submission: insufficient balance on HCM side"
+        details:
+          hcmErrorCode: "BALANCE_EXCEEDED"
+          employeeId: "emp-123"
+
+    InvalidTransitionError:
+      summary: Invalid state transition
+      value:
+        statusCode: 422
+        error: INVALID_TRANSITION
+        message: "Cannot approve a request with status CANCELLED"
+        details:
+          currentStatus: "CANCELLED"
+          attemptedTransition: "approve"
