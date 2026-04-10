@@ -1,98 +1,217 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# ExampleHR Time-Off Microservice
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A backend microservice that manages employee time-off requests and maintains balance integrity with an external Human Capital Management (HCM) system.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Overview
 
-## Description
+ExampleHR serves as the primary interface for employees to request time off, while the HCM system (e.g., Workday, SAP) remains the **source of truth** for employment data. This microservice handles:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Request lifecycle** — create, approve, reject, and cancel time-off requests
+- **Balance management** — local mirror of HCM balances with optimistic holds for pending requests
+- **HCM synchronization** — real-time validation on approval and batch inbound sync
+- **Defensive validation** — local checks that work independently of HCM availability
 
-## Project setup
+## Tech Stack
 
-```bash
-$ npm install
-```
+| Component | Technology |
+|-----------|-----------|
+| Framework | NestJS 11 (TypeScript) |
+| Database | SQLite via TypeORM |
+| Testing | Jest + Supertest |
+| API Docs | Swagger UI (OpenAPI) |
+| Mock HCM | Standalone Node.js HTTP server |
 
-## Compile and run the project
+## Prerequisites
+
+- **Node.js** >= 18
+- **npm** >= 9
+
+## Setup
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# Install dependencies
+npm install
 ```
 
-## Run tests
+No additional configuration is required. SQLite creates the database file automatically.
+
+## Running the Application
+
+### 1. Start the Mock HCM Server
+
+The mock HCM simulates an external HCM system (Workday/SAP). It runs on port 3001 and provides pre-loaded employee balances.
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run mock:hcm
 ```
 
-## Deployment
+### 2. Start the Application
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+In a separate terminal:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Development (with hot reload)
+npm run start:dev
+
+# Or production build
+npm run build && npm run start:prod
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+The API will be available at **http://localhost:3000**.
 
-## Resources
+### 3. Explore the API
 
-Check out a few resources that may come in handy when working with NestJS:
+Open **http://localhost:3000/api/docs** for the Swagger UI where you can test all endpoints interactively.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Quick Start Guide
 
-## Support
+Once both servers are running, test the full flow:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+**Step 1 — Seed balances via batch sync (simulates HCM pushing data):**
+```bash
+curl -X POST http://localhost:3000/sync/batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "workday",
+    "timestamp": "2026-04-10T00:00:00Z",
+    "balances": [
+      {"employeeId": "emp-1", "locationId": "loc-nyc", "policyType": "VACATION", "available": 15, "used": 3}
+    ]
+  }'
+```
 
-## Stay in touch
+**Step 2 — Check the balance:**
+```bash
+curl http://localhost:3000/balances/emp-1
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+**Step 3 — Create a time-off request:**
+```bash
+curl -X POST http://localhost:3000/requests \
+  -H "Content-Type: application/json" \
+  -d '{
+    "employeeId": "emp-1",
+    "locationId": "loc-nyc",
+    "policyType": "VACATION",
+    "startDate": "2026-05-01",
+    "endDate": "2026-05-05",
+    "days": 3,
+    "idempotencyKey": "req-001"
+  }'
+```
+
+**Step 4 — Approve the request (uses the `id` from step 3):**
+```bash
+curl -X PATCH http://localhost:3000/requests/<REQUEST_ID>/approve \
+  -H "Content-Type: application/json" \
+  -d '{"reviewerNote": "Enjoy your time off!"}'
+```
+
+**Step 5 — Verify the balance was updated:**
+```bash
+curl http://localhost:3000/balances/emp-1
+```
+
+## Running Tests
+
+```bash
+# Unit tests (50 tests)
+npm test
+
+# E2E tests (26 tests)
+npm run test:e2e
+
+# All tests with coverage report
+npm run test:cov
+```
+
+### Test Coverage
+
+Core business logic coverage:
+
+| Module | Lines |
+|--------|-------|
+| balance.service.ts | 100% |
+| request.service.ts | 92% |
+| hcm-client.service.ts | 94% |
+| sync.service.ts | 100% |
+| request.entity.ts (FSM) | 100% |
+
+### Test Scenarios
+
+The test suite covers:
+
+- **Full request lifecycle** — create -> approve -> balance deduction verified
+- **Rejection flow** — create -> reject -> pending hold released
+- **Cancellation** — cancel pending (release hold) and cancel approved (restore used)
+- **HCM rejection** — approval fails when HCM balance is insufficient
+- **HCM outage** — returns 502, request stays PENDING for retry
+- **Batch sync** — new balances, updates, conflict detection with pending requests
+- **Anniversary bonus** — balance increase via batch sync reconciles correctly
+- **Idempotency** — duplicate requests return existing, no double balance hold
+- **Defensive validation** — insufficient balance, invalid dates, date overlaps, invalid dimensions
+- **State machine** — all valid and invalid transitions tested
+
+## Project Structure
+
+```
+src/
+  balance/          Balance module (entity, service, controller)
+  request/          Request module (entity, service, controller, DTOs)
+  hcm/              HCM client module (real-time API communication)
+  sync/             Batch sync module (inbound HCM data, SyncLog)
+  database/         TypeORM + SQLite configuration
+  main.ts           App bootstrap with Swagger setup
+
+test/
+  mock-hcm/         Standalone mock HCM server
+  *.e2e-spec.ts     E2E tests (balance, request, sync, integration)
+
+docs/
+  TRD.md            Technical Requirement Document
+  openapi.yaml      OpenAPI 3.0 specification
+```
+
+## Architecture
+
+```
+Employee/Manager  -->  ExampleHR (localhost:3000)  -->  HCM System (localhost:3001)
+                       |                                |
+                       | Manages requests,              | Source of truth for
+                       | local balances,                | employment data and
+                       | defensive validation           | leave balances
+                       |                                |
+                       SQLite DB                        (Workday / SAP)
+```
+
+**Key design decisions:**
+
+- **Eventual consistency** — local balances are a cache of HCM, updated via batch sync and validated on-demand during approval
+- **Double validation on approval** — local check first (avoids unnecessary HCM calls), then HCM cross-check
+- **Optimistic locking** — prevents concurrent requests from overdrawing balance
+- **Idempotency keys** — client-provided keys prevent duplicate submissions
+- **Conflict-aware sync** — batch sync applies HCM data (source of truth) but flags conflicts with pending requests rather than auto-cancelling
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/balances/:employeeId` | Get all balances for an employee |
+| GET | `/balances/:employeeId/:locationId` | Get balances at a specific location |
+| POST | `/balances/seed` | Seed a balance record (dev helper) |
+| POST | `/requests` | Create a time-off request |
+| GET | `/requests` | List requests (filterable by employeeId, status) |
+| PATCH | `/requests/:id/approve` | Approve a request (validates with HCM) |
+| PATCH | `/requests/:id/reject` | Reject a request |
+| PATCH | `/requests/:id/cancel` | Cancel a request |
+| POST | `/sync/batch` | Receive bulk balance data from HCM |
+
+## Documentation
+
+- **[Technical Requirement Document](docs/TRD.md)** — architecture, data model, API design, challenges, and alternatives
+- **[OpenAPI Specification](docs/openapi.yaml)** — full API contract
+- **Swagger UI** — available at `/api/docs` when the app is running
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+UNLICENSED
