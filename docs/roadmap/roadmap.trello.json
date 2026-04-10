@@ -30,7 +30,7 @@
     {
       "id": "DISC-002",
       "name": "Setup SQLite + TypeORM infrastructure",
-      "list": "IN PROGRESS",
+      "list": "LIVE",
       "labels": ["TECH DEBT", "MVP", "P0"],
       "desc": "Add TypeORM with SQLite driver to the NestJS project. Configure database module, migrations setup, and base entity patterns. This unblocks all feature modules.",
       "checklist": [
@@ -43,7 +43,7 @@
     {
       "id": "DISC-003",
       "name": "Employee balance module — entities & CRUD",
-      "list": "TODO",
+      "list": "IN PROGRESS",
       "labels": ["PRODUCT", "MVP", "P0"],
       "desc": "Core module to track time-off balances per employee per location. This is the foundation the request and sync modules depend on. Balances represent the local mirror of HCM data.",
       "checklist": [
