@@ -1,0 +1,181 @@
+{
+  "board": "ExampleHR Time-Off Microservice",
+  "lists": ["BACKLOG", "TODO", "IN PROGRESS", "QA", "RELEASE", "LIVE"],
+  "labels": [
+    { "name": "PRODUCT", "color": "green" },
+    { "name": "MVP", "color": "orange" },
+    { "name": "TECH DEBT", "color": "yellow" },
+    { "name": "P0", "color": "red" },
+    { "name": "P1", "color": "purple" },
+    { "name": "P2", "color": "blue" },
+    { "name": "P3", "color": "sky" }
+  ],
+  "cards": [
+    {
+      "id": "DISC-001",
+      "name": "Write Technical Requirement Document (TRD)",
+      "list": "TODO",
+      "labels": ["PRODUCT", "MVP", "P0"],
+      "desc": "Create a comprehensive TRD covering the Time-Off Microservice architecture, API design, data model, HCM integration strategy, sync mechanisms, and error handling. Must include challenges, proposed solutions, and alternatives considered.",
+      "checklist": [
+        "Define system architecture and module boundaries",
+        "Design REST API contract (endpoints, DTOs, error responses)",
+        "Design data model (employees, balances, requests, sync log)",
+        "Document HCM real-time and batch integration strategy",
+        "Document conflict resolution and defensive validation approach",
+        "List challenges and alternatives considered",
+        "Peer review and finalize"
+      ]
+    },
+    {
+      "id": "DISC-002",
+      "name": "Setup SQLite + TypeORM infrastructure",
+      "list": "TODO",
+      "labels": ["TECH DEBT", "MVP", "P0"],
+      "desc": "Add TypeORM with SQLite driver to the NestJS project. Configure database module, migrations setup, and base entity patterns. This unblocks all feature modules.",
+      "checklist": [
+        "Install @nestjs/typeorm, typeorm, better-sqlite3",
+        "Create DatabaseModule with SQLite configuration",
+        "Configure test database (in-memory SQLite for tests)",
+        "Verify module loads and connection works"
+      ]
+    },
+    {
+      "id": "DISC-003",
+      "name": "Employee balance module — entities & CRUD",
+      "list": "TODO",
+      "labels": ["PRODUCT", "MVP", "P0"],
+      "desc": "Core module to track time-off balances per employee per location. This is the foundation the request and sync modules depend on. Balances represent the local mirror of HCM data.",
+      "checklist": [
+        "Create Balance entity (employeeId, locationId, policyType, available, used, pending)",
+        "Create BalanceModule with service and controller",
+        "GET /balances/:employeeId — list balances for an employee",
+        "GET /balances/:employeeId/:locationId — balance for specific location",
+        "Write unit tests for BalanceService",
+        "Write e2e tests for balance endpoints"
+      ]
+    },
+    {
+      "id": "DISC-004",
+      "name": "Time-off request module — lifecycle management",
+      "list": "TODO",
+      "labels": ["PRODUCT", "MVP", "P0"],
+      "desc": "Module to handle the full lifecycle of a time-off request: create, approve, reject, cancel. Must validate against local balance and later against HCM. Depends on balance module.",
+      "checklist": [
+        "Create TimeOffRequest entity (employeeId, locationId, type, startDate, endDate, days, status)",
+        "Create RequestModule with service and controller",
+        "POST /requests — create a new time-off request (status: PENDING)",
+        "PATCH /requests/:id/approve — manager approval (status: APPROVED)",
+        "PATCH /requests/:id/reject — manager rejection (status: REJECTED)",
+        "PATCH /requests/:id/cancel — employee cancellation (status: CANCELLED)",
+        "Validate balance sufficiency on request creation",
+        "Track pending days in balance (optimistic hold)",
+        "Write unit tests for RequestService",
+        "Write e2e tests for request lifecycle endpoints"
+      ]
+    },
+    {
+      "id": "DISC-005",
+      "name": "HCM integration — real-time API client",
+      "list": "TODO",
+      "labels": ["PRODUCT", "MVP", "P1"],
+      "desc": "Client module to communicate with the HCM real-time API for getting and sending time-off values. Used during request approval to validate with HCM and submit approved requests.",
+      "checklist": [
+        "Create HcmModule with HcmClientService",
+        "Implement getBalance(employeeId, locationId) — fetch from HCM",
+        "Implement submitTimeOff(employeeId, locationId, days) — send to HCM",
+        "Handle HCM error responses (invalid dimensions, insufficient balance)",
+        "Implement retry logic with exponential backoff",
+        "Write unit tests with mocked HCM responses"
+      ]
+    },
+    {
+      "id": "DISC-006",
+      "name": "HCM integration — batch sync endpoint",
+      "list": "TODO",
+      "labels": ["PRODUCT", "MVP", "P1"],
+      "desc": "Endpoint to receive bulk balance data from HCM. HCM can push the entire corpus of balances to ExampleHR. Must reconcile incoming data with local state and flag conflicts.",
+      "checklist": [
+        "POST /sync/batch — receive bulk balance payload from HCM",
+        "Upsert balances from batch data",
+        "Detect and log conflicts (local pending requests vs updated balances)",
+        "Create SyncLog entity to track sync history",
+        "Write unit tests for batch reconciliation logic",
+        "Write e2e tests for batch sync endpoint"
+      ]
+    },
+    {
+      "id": "DISC-007",
+      "name": "Defensive validation layer",
+      "list": "TODO",
+      "labels": ["PRODUCT", "MVP", "P1"],
+      "desc": "HCM validation is not always guaranteed. Implement a local defensive validation layer that checks balance sufficiency, dimension validity, and request consistency before and independently of HCM.",
+      "checklist": [
+        "Local balance sufficiency check (available - pending >= requested)",
+        "Date range validation (no overlaps, no past dates, max duration)",
+        "Dimension validation (valid locationId for employeeId)",
+        "Double-submission guard (idempotency on request creation)",
+        "Write unit tests for each validation rule"
+      ]
+    },
+    {
+      "id": "DISC-008",
+      "name": "Mock HCM server for testing",
+      "list": "TODO",
+      "labels": ["TECH DEBT", "MVP", "P0"],
+      "desc": "Build a mock HCM server that simulates real-time and batch endpoints with configurable behavior — success, errors, balance changes, latency. Essential for integration tests and proving system robustness.",
+      "checklist": [
+        "Create standalone mock HCM NestJS app or express server",
+        "Mock GET balance endpoint with configurable responses",
+        "Mock POST submit time-off with success/error scenarios",
+        "Mock batch endpoint that sends full balance corpus",
+        "Simulate external balance changes (anniversary bonus, yearly reset)",
+        "Simulate error scenarios (invalid dimensions, server down, timeout)",
+        "Make mock configurable per-test scenario"
+      ]
+    },
+    {
+      "id": "DISC-009",
+      "name": "Integration test suite",
+      "list": "TODO",
+      "labels": ["TECH DEBT", "MVP", "P1"],
+      "desc": "End-to-end integration tests that exercise the full request lifecycle with the mock HCM server. Must cover happy paths, conflict scenarios, and error resilience.",
+      "checklist": [
+        "Test: full request lifecycle (create -> approve -> HCM submit -> balance update)",
+        "Test: request rejected by HCM insufficient balance",
+        "Test: batch sync updates local balances correctly",
+        "Test: batch sync detects conflict with pending requests",
+        "Test: HCM unavailable — defensive validation still works",
+        "Test: concurrent requests don't overdraw balance",
+        "Test: balance refresh (anniversary/yearly) reconciles correctly",
+        "Generate and verify coverage report"
+      ]
+    },
+    {
+      "id": "DISC-010",
+      "name": "Error handling & exception filters",
+      "list": "BACKLOG",
+      "labels": ["TECH DEBT", "P2"],
+      "desc": "Implement NestJS exception filters for consistent API error responses. Map HCM errors, validation errors, and internal errors to proper HTTP responses with clear messages.",
+      "checklist": [
+        "Create global exception filter",
+        "Map HCM client errors to appropriate HTTP status codes",
+        "Standardize error response format (code, message, details)",
+        "Write tests for error response format"
+      ]
+    },
+    {
+      "id": "DISC-011",
+      "name": "API documentation with Swagger",
+      "list": "BACKLOG",
+      "labels": ["TECH DEBT", "P3"],
+      "desc": "Add Swagger/OpenAPI documentation to all endpoints so the API is self-documenting and easy to explore.",
+      "checklist": [
+        "Install @nestjs/swagger",
+        "Add decorators to all DTOs and controllers",
+        "Configure Swagger UI at /api/docs",
+        "Verify all endpoints documented correctly"
+      ]
+    }
+  ]
+}
