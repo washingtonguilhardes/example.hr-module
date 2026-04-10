@@ -137,7 +137,7 @@
     {
       "id": "DISC-009",
       "name": "Integration test suite",
-      "list": "IN PROGRESS",
+      "list": "LIVE",
       "labels": ["TECH DEBT", "MVP", "P1"],
       "desc": "End-to-end integration tests that exercise the full request lifecycle with the mock HCM server. Must cover happy paths, conflict scenarios, and error resilience.",
       "checklist": [
@@ -154,7 +154,7 @@
     {
       "id": "DISC-010",
       "name": "Error handling & exception filters",
-      "list": "BACKLOG",
+      "list": "LIVE",
       "labels": ["TECH DEBT", "P2"],
       "desc": "Implement NestJS exception filters for consistent API error responses. Map HCM errors, validation errors, and internal errors to proper HTTP responses with clear messages.",
       "checklist": [
@@ -167,7 +167,7 @@
     {
       "id": "DISC-011",
       "name": "API documentation with Swagger",
-      "list": "BACKLOG",
+      "list": "LIVE",
       "labels": ["TECH DEBT", "P3"],
       "desc": "Add Swagger/OpenAPI documentation to all endpoints so the API is self-documenting and easy to explore.",
       "checklist": [
