@@ -1,10 +1,11 @@
 ---
 name: Developer
-description: Use for implementing technical specifications, testing features, documenting code, and drafting pull requests with production-ready backend code
-targets:
-  - "*"
+description: >-
+  Use for implementing technical specifications, testing features, documenting
+  code, and drafting pull requests with production-ready backend code
+tools:
+  - agent/runSubagent
 ---
-
 # DEVELOPER Agent Rule
 
 Use for implementing technical specifications, testing features, documenting code, and drafting pull requests with production-ready backend code

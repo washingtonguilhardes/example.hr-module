@@ -1,0 +1,20 @@
+[mcp_servers.rulesync-mcp]
+type = "stdio"
+command = "npx"
+args = [ "-y", "rulesync", "mcp" ]
+
+[mcp_servers.rulesync-mcp.env]
+[mcp_servers.serena]
+type = "stdio"
+command = "uvx"
+args = [ "--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server", "--context", "ide-assistant", "--enable-web-dashboard", "false", "--project", "." ]
+
+[mcp_servers.serena.env]
+[mcp_servers.context7]
+type = "stdio"
+command = "npx"
+args = [ "-y", "@upstash/context7-mcp" ]
+
+[mcp_servers.context7.env]
+[features]
+codex_hooks = true
