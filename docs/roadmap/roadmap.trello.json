@@ -43,7 +43,7 @@
     {
       "id": "DISC-003",
       "name": "Employee balance module — entities & CRUD",
-      "list": "IN PROGRESS",
+      "list": "LIVE",
       "labels": ["PRODUCT", "MVP", "P0"],
       "desc": "Core module to track time-off balances per employee per location. This is the foundation the request and sync modules depend on. Balances represent the local mirror of HCM data.",
       "checklist": [
@@ -58,7 +58,7 @@
     {
       "id": "DISC-004",
       "name": "Time-off request module — lifecycle management",
-      "list": "TODO",
+      "list": "IN PROGRESS",
       "labels": ["PRODUCT", "MVP", "P0"],
       "desc": "Module to handle the full lifecycle of a time-off request: create, approve, reject, cancel. Must validate against local balance and later against HCM. Depends on balance module.",
       "checklist": [
