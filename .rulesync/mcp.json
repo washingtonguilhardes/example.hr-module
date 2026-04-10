@@ -1,0 +1,42 @@
+{
+  "$schema": "https://github.com/dyoshikawa/rulesync/releases/latest/download/mcp-schema.json",
+  "servers": {
+    "rulesync-mcp": "RuleSync MCP server - syncs shared rules across AI coding tools",
+    "serena": "Serena code intelligence - provides semantic code analysis via Oraios",
+    "context7": "Context7 - library documentation lookup via Upstash"
+  },
+  "mcpServers": {
+    "rulesync-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "rulesync", "mcp"],
+      "env": {}
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--enable-web-dashboard",
+        "false",
+        "--project",
+        "."
+      ],
+      "env": {}
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {}
+    }
+  }
+}
