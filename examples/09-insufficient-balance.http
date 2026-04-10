@@ -1,0 +1,20 @@
+### SCENARIO: Request rejected locally — insufficient balance
+### Prerequisites: run 01-seed-balances.http first
+
+### Step 1: Check emp-1 balance (should show ~12 effective vacation days)
+GET http://localhost:3000/balances/emp-1/loc-nyc
+
+### Step 2: Try to request 50 days — way more than available
+# Expected: 422 INSUFFICIENT_BALANCE
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-10-01",
+  "endDate": "2026-12-15",
+  "days": 50,
+  "idempotencyKey": "insufficient-001"
+}

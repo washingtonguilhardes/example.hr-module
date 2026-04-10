@@ -1,0 +1,24 @@
+### SCENARIO: Employee cancels their own pending request
+### Prerequisites: run 01-seed-balances.http first
+
+### Step 1: Create a request
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-2",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-07-01",
+  "endDate": "2026-07-05",
+  "days": 3,
+  "reason": "Trip planned",
+  "idempotencyKey": "cancel-pending-001"
+}
+
+### Step 2: Employee cancels before approval (replace REQUEST_ID)
+# Expected: 200 CANCELLED, pending hold released
+PATCH http://localhost:3000/requests/{{REQUEST_ID}}/cancel
+
+### Step 3: Verify balance — pending released
+GET http://localhost:3000/balances/emp-2/loc-nyc

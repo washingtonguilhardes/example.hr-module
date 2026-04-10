@@ -1,0 +1,79 @@
+### SCENARIO: Input validation catches malformed requests
+
+### Missing required fields — expects 400
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{}
+
+### Invalid policyType — expects 400
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "INVALID_TYPE",
+  "startDate": "2026-05-01",
+  "endDate": "2026-05-05",
+  "days": 3,
+  "idempotencyKey": "validation-001"
+}
+
+### Invalid date format — expects 400
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "not-a-date",
+  "endDate": "2026-05-05",
+  "days": 3,
+  "idempotencyKey": "validation-002"
+}
+
+### Negative days — expects 400
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-05-01",
+  "endDate": "2026-05-05",
+  "days": -1,
+  "idempotencyKey": "validation-003"
+}
+
+### Unknown field (forbidNonWhitelisted) — expects 400
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-05-01",
+  "endDate": "2026-05-05",
+  "days": 3,
+  "idempotencyKey": "validation-004",
+  "hackerField": "malicious"
+}
+
+### Start date after end date — expects 422
+# Note: passes class-validator (both valid dates) but fails business logic
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-05-10",
+  "endDate": "2026-05-01",
+  "days": 3,
+  "idempotencyKey": "validation-005"
+}

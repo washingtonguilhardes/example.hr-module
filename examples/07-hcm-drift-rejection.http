@@ -1,0 +1,35 @@
+### SCENARIO: HCM rejects approval due to balance drift
+### The local DB shows emp-3 with 7 effective days,
+### but HCM only has 2 effective days (balance changed externally).
+### Prerequisites: run 01-seed-balances.http first, mock HCM running on :3001
+
+### Step 1: Verify local balance — shows 7 effective days
+GET http://localhost:3000/balances/emp-3/loc-nyc
+
+### Step 2: Create a 5-day request — passes local validation (7 >= 5)
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-3",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-05-01",
+  "endDate": "2026-05-07",
+  "days": 5,
+  "reason": "Long vacation",
+  "idempotencyKey": "drift-001"
+}
+
+### Step 3: Try to approve — HCM rejects! (replace REQUEST_ID)
+# Expected: 422 HCM_VALIDATION_ERROR
+# HCM only has 2 effective days (10 available - 8 used)
+PATCH http://localhost:3000/requests/{{REQUEST_ID}}/approve
+Content-Type: application/json
+
+{
+  "reviewerNote": "Looks good to me"
+}
+
+### Step 4: Request should still be PENDING (can retry later)
+GET http://localhost:3000/requests?employeeId=emp-3&status=PENDING

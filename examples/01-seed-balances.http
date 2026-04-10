@@ -1,0 +1,50 @@
+### Seed balance for emp-1 (VACATION) — happy path employee
+POST http://localhost:3000/balances/seed
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "available": 15,
+  "used": 3
+}
+
+### Seed balance for emp-1 (SICK)
+POST http://localhost:3000/balances/seed
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "SICK",
+  "available": 10,
+  "used": 1
+}
+
+### Seed balance for emp-2
+POST http://localhost:3000/balances/seed
+Content-Type: application/json
+
+{
+  "employeeId": "emp-2",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "available": 20,
+  "used": 5
+}
+
+### Seed balance for emp-3 — HCM drift scenario
+# Local DB: 10 available, 3 used = 7 effective
+# HCM mock: 10 available, 8 used = 2 effective
+# This mismatch causes approval to fail on HCM validation
+POST http://localhost:3000/balances/seed
+Content-Type: application/json
+
+{
+  "employeeId": "emp-3",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "available": 10,
+  "used": 3
+}

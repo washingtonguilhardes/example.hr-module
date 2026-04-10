@@ -1,0 +1,34 @@
+### SCENARIO: Employee cancels an already approved request
+### Prerequisites: run 01-seed-balances.http first, mock HCM running on :3001
+
+### Step 1: Create a request
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-2",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-08-01",
+  "endDate": "2026-08-03",
+  "days": 2,
+  "idempotencyKey": "cancel-approved-001"
+}
+
+### Step 2: Approve it (replace REQUEST_ID)
+PATCH http://localhost:3000/requests/{{REQUEST_ID}}/approve
+Content-Type: application/json
+
+{
+  "reviewerNote": "Approved"
+}
+
+### Step 3: Check balance — used should have increased
+GET http://localhost:3000/balances/emp-2/loc-nyc
+
+### Step 4: Cancel the approved request (replace REQUEST_ID)
+# Expected: 200 CANCELLED, used days restored
+PATCH http://localhost:3000/requests/{{REQUEST_ID}}/cancel
+
+### Step 5: Verify balance — used should be back to original
+GET http://localhost:3000/balances/emp-2/loc-nyc

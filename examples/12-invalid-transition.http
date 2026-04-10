@@ -1,0 +1,37 @@
+### SCENARIO: Invalid state transitions
+### Prerequisites: run 01-seed-balances.http first
+
+### Step 1: Create a request
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-2",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-12-01",
+  "endDate": "2026-12-03",
+  "days": 2,
+  "idempotencyKey": "transition-001"
+}
+
+### Step 2: Reject it (replace REQUEST_ID)
+PATCH http://localhost:3000/requests/{{REQUEST_ID}}/reject
+Content-Type: application/json
+
+{
+  "reviewerNote": "Not now"
+}
+
+### Step 3: Try to approve the rejected request (replace REQUEST_ID)
+# Expected: 422 INVALID_TRANSITION — cannot approve a REJECTED request
+PATCH http://localhost:3000/requests/{{REQUEST_ID}}/approve
+Content-Type: application/json
+
+{
+  "reviewerNote": "Changed my mind"
+}
+
+### Step 4: Try to cancel the rejected request (replace REQUEST_ID)
+# Expected: 422 INVALID_TRANSITION — cannot cancel a REJECTED request
+PATCH http://localhost:3000/requests/{{REQUEST_ID}}/cancel

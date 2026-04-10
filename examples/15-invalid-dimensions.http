@@ -1,0 +1,32 @@
+### SCENARIO: Request for unknown employee/location/policy combination
+### No balance exists, so the dimension check fails
+
+### Try to create a request for an employee with no balance record
+# Expected: 422 INVALID_DIMENSIONS
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "unknown-emp",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-05-01",
+  "endDate": "2026-05-05",
+  "days": 3,
+  "idempotencyKey": "dimensions-001"
+}
+
+### Try with a known employee but unknown location
+# Expected: 422 INVALID_DIMENSIONS
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "unknown-loc",
+  "policyType": "VACATION",
+  "startDate": "2026-05-01",
+  "endDate": "2026-05-05",
+  "days": 3,
+  "idempotencyKey": "dimensions-002"
+}

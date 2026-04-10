@@ -1,0 +1,29 @@
+### SCENARIO: Create a request, then reject it
+### Prerequisites: run 01-seed-balances.http first
+
+### Step 1: Create a request
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "SICK",
+  "startDate": "2026-06-01",
+  "endDate": "2026-06-03",
+  "days": 2,
+  "reason": "Feeling unwell",
+  "idempotencyKey": "reject-001"
+}
+
+### Step 2: Reject it (replace REQUEST_ID)
+# Expected: 200 REJECTED, pending hold released
+PATCH http://localhost:3000/requests/{{REQUEST_ID}}/reject
+Content-Type: application/json
+
+{
+  "reviewerNote": "Team is short-staffed that week"
+}
+
+### Step 3: Verify balance — pending should be back to 0
+GET http://localhost:3000/balances/emp-1/loc-nyc

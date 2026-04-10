@@ -1,0 +1,17 @@
+### Get all balances for emp-1
+GET http://localhost:3000/balances/emp-1
+
+### Get balances for emp-1 at a specific location
+GET http://localhost:3000/balances/emp-1/loc-nyc
+
+### Get balances for emp-2
+GET http://localhost:3000/balances/emp-2
+
+### Get balances for emp-3 (drift scenario)
+GET http://localhost:3000/balances/emp-3
+
+### Get balances for unknown employee — expects 404
+GET http://localhost:3000/balances/unknown-emp
+
+### Get balances for unknown location — expects 404
+GET http://localhost:3000/balances/emp-1/unknown-loc

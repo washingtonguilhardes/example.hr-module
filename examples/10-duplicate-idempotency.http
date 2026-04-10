@@ -1,0 +1,35 @@
+### SCENARIO: Duplicate request with same idempotency key
+### Demonstrates that the system prevents double submissions
+### Prerequisites: run 01-seed-balances.http first
+
+### Step 1: Create a request
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-11-01",
+  "endDate": "2026-11-03",
+  "days": 2,
+  "idempotencyKey": "idempotent-001"
+}
+
+### Step 2: Send the exact same request again
+# Expected: 201 but returns the SAME request (same id), no double balance hold
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-11-01",
+  "endDate": "2026-11-03",
+  "days": 2,
+  "idempotencyKey": "idempotent-001"
+}
+
+### Step 3: Verify balance — pending should be 2, not 4
+GET http://localhost:3000/balances/emp-1/loc-nyc

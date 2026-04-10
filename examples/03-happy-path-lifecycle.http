@@ -1,0 +1,36 @@
+### SCENARIO: Full happy path — create, approve, verify
+### Prerequisites: run 01-seed-balances.http first, mock HCM running on :3001
+
+### Step 1: Create a 3-day vacation request for emp-1
+# Expected: 201 PENDING, balance pending increases by 3
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-1",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-05-01",
+  "endDate": "2026-05-05",
+  "days": 3,
+  "reason": "Family vacation",
+  "idempotencyKey": "happy-001"
+}
+
+### Step 2: Check balance — pending should be 3, effectiveAvailable should be 9
+GET http://localhost:3000/balances/emp-1/loc-nyc
+
+### Step 3: Approve the request (replace REQUEST_ID with id from step 1)
+# Expected: 200 APPROVED, HCM submission accepted, hcmSubmissionId populated
+PATCH http://localhost:3000/requests/{{REQUEST_ID}}/approve
+Content-Type: application/json
+
+{
+  "reviewerNote": "Enjoy your time off!"
+}
+
+### Step 4: Verify balance — pending=0, used=6 (3 original + 3 deducted)
+GET http://localhost:3000/balances/emp-1/loc-nyc
+
+### Step 5: List all requests for emp-1
+GET http://localhost:3000/requests?employeeId=emp-1

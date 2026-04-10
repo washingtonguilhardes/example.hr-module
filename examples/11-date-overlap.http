@@ -1,0 +1,31 @@
+### SCENARIO: Overlapping date ranges rejected
+### Prerequisites: run 01-seed-balances.http first
+
+### Step 1: Create a request for May 1-10
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-2",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-05-01",
+  "endDate": "2026-05-10",
+  "days": 7,
+  "idempotencyKey": "overlap-001"
+}
+
+### Step 2: Try to create another request overlapping May 5-15
+# Expected: 422 INVALID_DATE_RANGE — overlaps with existing request
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-2",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-05-05",
+  "endDate": "2026-05-15",
+  "days": 7,
+  "idempotencyKey": "overlap-002"
+}

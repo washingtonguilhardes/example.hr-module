@@ -1,0 +1,81 @@
+### SCENARIO: Batch sync from HCM — new balances and conflict detection
+
+### Step 1: Seed and create a pending request to set up a conflict
+POST http://localhost:3000/balances/seed
+Content-Type: application/json
+
+{
+  "employeeId": "emp-10",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "available": 15,
+  "used": 3
+}
+
+### Step 2: Create a pending request for 8 days
+POST http://localhost:3000/requests
+Content-Type: application/json
+
+{
+  "employeeId": "emp-10",
+  "locationId": "loc-nyc",
+  "policyType": "VACATION",
+  "startDate": "2026-06-01",
+  "endDate": "2026-06-12",
+  "days": 8,
+  "idempotencyKey": "sync-conflict-001"
+}
+
+### Step 3: Batch sync reduces emp-10 balance — conflict detected
+# HCM says only 5 available now, but emp-10 has 8 days pending
+# Expected: applied=1, conflicts=1 (balance updated, conflict logged)
+POST http://localhost:3000/sync/batch
+Content-Type: application/json
+
+{
+  "source": "workday",
+  "timestamp": "2026-04-10T00:00:00Z",
+  "balances": [
+    { "employeeId": "emp-10", "locationId": "loc-nyc", "policyType": "VACATION", "available": 5, "used": 3 }
+  ]
+}
+
+### Step 4: Check balance — available updated to 5, pending still 8, effectiveAvailable negative
+GET http://localhost:3000/balances/emp-10/loc-nyc
+
+###
+
+### SCENARIO: Batch sync — anniversary bonus (balance increase, no conflict)
+POST http://localhost:3000/sync/batch
+Content-Type: application/json
+
+{
+  "source": "workday",
+  "timestamp": "2026-04-10T12:00:00Z",
+  "balances": [
+    { "employeeId": "emp-1", "locationId": "loc-nyc", "policyType": "VACATION", "available": 20, "used": 3 },
+    { "employeeId": "emp-1", "locationId": "loc-nyc", "policyType": "SICK", "available": 12, "used": 1 }
+  ]
+}
+
+### Verify — vacation bumped from 15 to 20 (anniversary bonus)
+GET http://localhost:3000/balances/emp-1/loc-nyc
+
+###
+
+### SCENARIO: Batch sync — seed new employees in bulk
+POST http://localhost:3000/sync/batch
+Content-Type: application/json
+
+{
+  "source": "workday",
+  "timestamp": "2026-04-10T18:00:00Z",
+  "balances": [
+    { "employeeId": "emp-20", "locationId": "loc-sf", "policyType": "VACATION", "available": 18, "used": 0 },
+    { "employeeId": "emp-20", "locationId": "loc-sf", "policyType": "SICK", "available": 8, "used": 0 },
+    { "employeeId": "emp-21", "locationId": "loc-la", "policyType": "VACATION", "available": 15, "used": 2 }
+  ]
+}
+
+### Verify new employees exist
+GET http://localhost:3000/balances/emp-20
