@@ -7,12 +7,29 @@ import { TimeOffRequest } from "../src/request/request.entity";
 import { BalanceModule } from "../src/balance/balance.module";
 import { RequestModule } from "../src/request/request.module";
 import { BalanceService } from "../src/balance/balance.service";
+import { HcmClientService } from "../src/hcm/hcm-client.service";
+
+const mockHcmClient = {
+  getBalance: jest.fn().mockResolvedValue({
+    employeeId: "emp-1",
+    locationId: "loc-nyc",
+    policyType: "VACATION",
+    available: 15,
+    used: 3,
+  }),
+  submitTimeOff: jest.fn().mockResolvedValue({
+    submissionId: "hcm-sub-e2e",
+    status: "ACCEPTED",
+  }),
+};
 
 describe("Request endpoints (e2e)", () => {
   let app: INestApplication;
   let balanceService: BalanceService;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
@@ -24,7 +41,10 @@ describe("Request endpoints (e2e)", () => {
         BalanceModule,
         RequestModule,
       ],
-    }).compile();
+    })
+      .overrideProvider(HcmClientService)
+      .useValue(mockHcmClient)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();

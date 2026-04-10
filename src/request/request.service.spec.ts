@@ -5,6 +5,21 @@ import { RequestService } from "./request.service";
 import { TimeOffRequest, RequestStatus } from "./request.entity";
 import { Balance } from "../balance/balance.entity";
 import { BalanceService } from "../balance/balance.service";
+import { HcmClientService } from "../hcm/hcm-client.service";
+
+const mockHcmClient = {
+  getBalance: jest.fn().mockResolvedValue({
+    employeeId: "emp-1",
+    locationId: "loc-nyc",
+    policyType: "VACATION",
+    available: 15,
+    used: 3,
+  }),
+  submitTimeOff: jest.fn().mockResolvedValue({
+    submissionId: "hcm-sub-mock",
+    status: "ACCEPTED",
+  }),
+};
 
 describe("RequestService", () => {
   let service: RequestService;
@@ -12,6 +27,8 @@ describe("RequestService", () => {
   let module: TestingModule;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     module = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
@@ -22,7 +39,11 @@ describe("RequestService", () => {
         }),
         TypeOrmModule.forFeature([TimeOffRequest, Balance]),
       ],
-      providers: [RequestService, BalanceService],
+      providers: [
+        RequestService,
+        BalanceService,
+        { provide: HcmClientService, useValue: mockHcmClient },
+      ],
     }).compile();
 
     service = module.get<RequestService>(RequestService);

@@ -58,7 +58,7 @@
     {
       "id": "DISC-004",
       "name": "Time-off request module — lifecycle management",
-      "list": "IN PROGRESS",
+      "list": "LIVE",
       "labels": ["PRODUCT", "MVP", "P0"],
       "desc": "Module to handle the full lifecycle of a time-off request: create, approve, reject, cancel. Must validate against local balance and later against HCM. Depends on balance module.",
       "checklist": [
@@ -77,7 +77,7 @@
     {
       "id": "DISC-005",
       "name": "HCM integration — real-time API client",
-      "list": "TODO",
+      "list": "IN PROGRESS",
       "labels": ["PRODUCT", "MVP", "P1"],
       "desc": "Client module to communicate with the HCM real-time API for getting and sending time-off values. Used during request approval to validate with HCM and submit approved requests.",
       "checklist": [
@@ -121,7 +121,7 @@
     {
       "id": "DISC-008",
       "name": "Mock HCM server for testing",
-      "list": "TODO",
+      "list": "IN PROGRESS",
       "labels": ["TECH DEBT", "MVP", "P0"],
       "desc": "Build a mock HCM server that simulates real-time and batch endpoints with configurable behavior — success, errors, balance changes, latency. Essential for integration tests and proving system robustness.",
       "checklist": [

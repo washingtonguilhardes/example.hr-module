@@ -3,6 +3,8 @@ import {
   NotFoundException,
   UnprocessableEntityException,
   ConflictException,
+  BadGatewayException,
+  Logger,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, Not, In } from "typeorm";
@@ -12,6 +14,7 @@ import {
   isValidTransition,
 } from "./request.entity";
 import { BalanceService } from "../balance/balance.service";
+import { HcmClientService } from "../hcm/hcm-client.service";
 import { CreateRequestDto } from "./dto/create-request.dto";
 import {
   TimeOffRequestResponseDto,
@@ -20,10 +23,13 @@ import {
 
 @Injectable()
 export class RequestService {
+  private readonly logger = new Logger(RequestService.name);
+
   constructor(
     @InjectRepository(TimeOffRequest)
     private readonly requestRepo: Repository<TimeOffRequest>,
     private readonly balanceService: BalanceService,
+    private readonly hcmClient: HcmClientService,
   ) {}
 
   async create(dto: CreateRequestDto): Promise<TimeOffRequestResponseDto> {
@@ -137,7 +143,7 @@ export class RequestService {
 
     this.assertTransition(request, RequestStatus.APPROVED);
 
-    // Re-validate balance sufficiency before approval
+    // Step 1: Local validation — re-check balance sufficiency
     const balance = await this.balanceService.findOne(
       request.employeeId,
       request.locationId,
@@ -151,11 +157,6 @@ export class RequestService {
       });
     }
 
-    // Check that effective available (excluding this request's pending hold) is sufficient
-    // The pending hold is already counted, so effectiveAvailable already accounts for it
-    // We just need to make sure the balance hasn't gone negative due to sync
-    const availableAfterDeduct =
-      Number(balance.available) - Number(balance.used) - Number(balance.pending) + Number(request.days) - Number(request.days);
     if (balance.effectiveAvailable < 0) {
       throw new UnprocessableEntityException({
         statusCode: 422,
@@ -170,7 +171,56 @@ export class RequestService {
       });
     }
 
-    // Transition: move from pending to used
+    // Step 2: HCM validation — fetch fresh balance and submit
+    try {
+      const hcmBalance = await this.hcmClient.getBalance(
+        request.employeeId,
+        request.locationId,
+      );
+
+      // Cross-check HCM balance against local
+      const hcmEffective = hcmBalance.available - hcmBalance.used;
+      if (hcmEffective < Number(request.days)) {
+        throw new UnprocessableEntityException({
+          statusCode: 422,
+          error: "HCM_VALIDATION_ERROR",
+          message: `HCM balance insufficient: ${hcmEffective} available but ${request.days} requested`,
+          details: {
+            hcmAvailable: hcmBalance.available,
+            hcmUsed: hcmBalance.used,
+            requested: Number(request.days),
+          },
+        });
+      }
+
+      // Submit to HCM
+      const submission = await this.hcmClient.submitTimeOff({
+        employeeId: request.employeeId,
+        locationId: request.locationId,
+        policyType: request.policyType,
+        days: Number(request.days),
+        startDate: request.startDate,
+        endDate: request.endDate,
+      });
+
+      request.hcmSubmissionId = submission.submissionId;
+    } catch (error) {
+      // Re-throw HCM validation errors and bad gateway errors as-is
+      if (
+        error instanceof UnprocessableEntityException ||
+        error instanceof BadGatewayException
+      ) {
+        throw error;
+      }
+      this.logger.error(`Unexpected HCM error: ${error}`);
+      throw new BadGatewayException({
+        statusCode: 502,
+        error: "HCM_UNAVAILABLE",
+        message: "HCM is unreachable, approval deferred. Please retry.",
+      });
+    }
+
+    // Step 3: Update local state — move from pending to used
     await this.balanceService.deductUsed(balance, Number(request.days));
 
     request.status = RequestStatus.APPROVED;
